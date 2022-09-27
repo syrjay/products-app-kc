@@ -1,19 +1,27 @@
 package ma.enset.productsapp.security;
 
-import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
+// import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
+import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
+import org.keycloak.adapters.springsecurity.client.KeycloakClientRequestFactory;
+import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
 import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+// import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
-
-@Configuration
+// @Configuration
+@KeycloakConfiguration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(jsr250Enabled = true)
 public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
   @Override
@@ -22,22 +30,28 @@ public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter
   }
 
   // gestion des user
-  @Override
-  protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    // dire à spring boot que je ne gère pas les users et les roles, je le délègue
-    auth.authenticationProvider(keycloakAuthenticationProvider());
-  }
+  @Autowired
+   public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+       KeycloakAuthenticationProvider keycloakAuthenticationProvider = keycloakAuthenticationProvider();
+       keycloakAuthenticationProvider.setGrantedAuthoritiesMapper(new SimpleAuthorityMapper());
+       auth.authenticationProvider(keycloakAuthenticationProvider);
+   }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
     // pour accéser à /product il faut s'authentifier d'abord
-    http.authorizeRequests().antMatchers("/product/**", "/suppliers/**").authenticated();
+    http.authorizeRequests().antMatchers("/products/**", "/suppliers/**").authenticated();
   }
 
-  @Bean
+  /* @Bean
   public KeycloakSpringBootConfigResolver springBootConfigResolver() {
     return new KeycloakSpringBootConfigResolver();
+  } */
+
+  @Bean
+  public KeycloakRestTemplate keycloakRestTemplate(KeycloakClientRequestFactory keycloakClientRequestFactory) {
+    return new KeycloakRestTemplate(keycloakClientRequestFactory);
   }
   
 }
