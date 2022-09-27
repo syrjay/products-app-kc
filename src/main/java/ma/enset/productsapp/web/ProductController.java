@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -55,6 +56,12 @@ public class ProductController{
         Map<String, String> map = new HashMap<>();
         map.put("access_token", keycloakSecurityContext.getTokenString());
         return map;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public String exceptionHandler(Exception e, Model model) {
+        model.addAttribute("errorMessage", "Vous n'avez pas autorisés !");
+        return "errors";
     }
 
 }
